@@ -1,11 +1,11 @@
 INSERT INTO sales.daily_cumulate
 WITH yesterday AS (
   SELECT * FROM sales.daily_cumulate
-  WHERE snapshot_date = '2020-03-22'
+  WHERE snapshot_date = '{{ yesterday_ds }}'
 ),
 today AS (
   SELECT * FROM sales.daily
-  WHERE snapshot_date = '2020-03-23'
+  WHERE snapshot_date = '{{ ds }}'
 ),
 create_array AS (
   SELECT
