@@ -1,0 +1,50 @@
+#!/bin/bash
+set -e
+# connect to postgres db with postgres role
+psql -v ON_ERROR_STOP=1 \
+    --username $POSTGRES_USER \
+    --dbname $POSTGRES_DB <<-EOSQL
+\conninfo
+
+-- role
+CREATE ROLE ${DB_USER}
+WITH LOGIN
+PASSWORD '$DB_PASSWORD'
+CONNECTION LIMIT 10
+VALID UNTIL 'infinity'
+NOCREATEDB
+NOSUPERUSER
+NOCREATEROLE
+NOINHERIT
+NOBYPASSRLS
+NOREPLICATION;
+
+-- database
+CREATE DATABASE ${DB_NAME}
+WITH OWNER ${DB_USER}
+TEMPLATE template1
+ENCODING='UTF8';
+EOSQL
+
+# connect to created db with postgres role
+psql -v ON_ERROR_STOP=1 \
+    --username $POSTGRES_USER \
+    --dbname ${DB_NAME} <<-EOSQL
+\conninfo
+
+-- schema
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA IF NOT EXISTS ${SCHEMA} AUTHORIZATION ${DB_USER};
+
+-- extension
+CREATE EXTENSION IF NOT EXISTS dblink
+WITH SCHEMA ${SCHEMA}
+VERSION '1.2';
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+WITH SCHEMA ${SCHEMA};
+
+CREATE EXTENSION IF NOT EXISTS adminpack
+WITH SCHEMA pg_catalog
+VERSION '2.0';
+EOSQL
