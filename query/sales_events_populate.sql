@@ -1,21 +1,21 @@
 WITH dates AS (
-SELECT
-generate_series(
-  DATE '2024-01-01',
-  DATE '2024-12-31',
-  INTERVAL '1 days'
-)::DATE as event_date
+  SELECT
+  generate_series(
+    DATE '2024-01-01',
+    DATE '2024-12-31',
+    INTERVAL '1 days'
+  )::DATE as event_date
 ), date_pool AS (
-SELECT
-row_number () OVER (ORDER BY event_date) AS id,
-event_date
-FROM dates
+  SELECT
+  row_number () OVER (ORDER BY event_date) AS id,
+  event_date
+  FROM dates
 ), random_base AS (
-SELECT
-generate_series(1, 1000000, 1) AS event_id,
-trunc(random() * 10 + 1) AS product_id,
-trunc(random() * 3 + 1) AS random_event,
-trunc(random() * 366 + 1) AS random_date
+  SELECT
+  generate_series(1, :sales_events, 1) AS event_id,
+  trunc(random() * :products + 1) AS product_id,
+  trunc(random() * 3 + 1) AS random_event,
+  trunc(random() * 366 + 1) AS random_date
 )
 INSERT INTO sales.events
 SELECT
