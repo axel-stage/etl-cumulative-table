@@ -2,14 +2,15 @@
 set -e
 # connect to postgres db with postgres role
 psql -v ON_ERROR_STOP=1 \
-    --username $POSTGRES_USER \
-    --dbname $POSTGRES_DB <<-EOSQL
+    --username ${POSTGRES_USER} \
+    --dbname ${POSTGRES_DB} <<-EOSQL
+\timing
 \conninfo
 
 -- role
 CREATE ROLE ${DB_USER}
 WITH LOGIN
-PASSWORD '$DB_PASSWORD'
+PASSWORD '$PGPASSWORD'
 CONNECTION LIMIT 10
 VALID UNTIL 'infinity'
 NOCREATEDB
@@ -28,8 +29,9 @@ EOSQL
 
 # connect to created db with postgres role
 psql -v ON_ERROR_STOP=1 \
-    --username $POSTGRES_USER \
+    --username ${POSTGRES_USER} \
     --dbname ${DB_NAME} <<-EOSQL
+\timing
 \conninfo
 
 -- schema
@@ -47,4 +49,20 @@ WITH SCHEMA ${SCHEMA};
 CREATE EXTENSION IF NOT EXISTS adminpack
 WITH SCHEMA pg_catalog
 VERSION '2.0';
+\q
+EOSQL
+
+# connect to created db with dbuser role
+psql -v ON_ERROR_STOP=1 \
+  --username=${DB_USER} \
+  --dbname=${DB_NAME} <<-EOSQL
+\timing
+\conninfo
+\i schema/sales_events.sql
+\i schema/sales_daily.sql
+\i schema/sales_daily_cumulate.sql
+\set sales_events ${SALES_EVENTS}
+\set products ${PRODUCTS}
+\i query/sales_events_populate.sql
+\q
 EOSQL
